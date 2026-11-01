@@ -20,6 +20,17 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_overlay_dark" />
 
+    <!-- Top Center Logo: NuttyFlix (Netflix Red Curved Arc) -->
+    <ImageView
+        android:id="@+id/img_logo"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="20dp"
+        android:elevation="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/logo_nuttyflix" />
+
     <!-- Top Fixed Bar: Inputs, Network, Settings & Clock -->
     <LinearLayout
         android:id="@+id/top_bar"

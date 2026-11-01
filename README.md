@@ -10,38 +10,53 @@
 ## ✨ Features
 
 - **⚡ Blazing Fast Performance:**
-  - APK size < 550 KB (vs OEM launcher > 80 MB).
+  - APK size ~ 527 KB (vs OEM launcher > 80 MB).
   - Cold launch time < 150 ms with zero background lag or stutter.
-  - Zero dependencies: Pure native Android SDK (Java + Vector Drawables).
+  - Zero third-party dependencies: Pure native Android SDK (Java + Vector Drawables).
 - **🛡️ 100% Ad-Free & Telemetry-Free:**
   - No sponsored feeds, no banners, no background tracking, no network pinging.
-- **🎨 FLauncher Minimalist Aesthetic:**
+- **🎨 FLauncher Minimalist Aesthetic & OLED Black Mode:**
   - Modern 16:9 banner app cards with smooth focus animations (1.08x scale + shadow elevation).
   - Night starry sky wallpaper with dark readable contrast gradient overlay.
-  - Top bar featuring a vector Settings gear button, live clock (`HH:mm`), and date (`d MMM yyyy`).
+  - **🖤 OLED Pure Black Mode:** One-click toggle in settings for pitch black (`#000000`) background (infinite contrast, 0 pixel power, burn-in protection).
+  - Top bar featuring real-time **Network Status** (Ethernet `<|>` / Wi-Fi), **Settings Gear**, **Live Clock** (`HH:mm`), and **Date** (`d MMM yyyy`).
+- **📱 Sideload & Mobile App Support:**
+  - Automatically queries both `CATEGORY_LEANBACK_LAUNCHER` and `CATEGORY_LAUNCHER`.
+  - Seamlessly launches sideloaded mobile APKs (Chrome, Brave, Kodi, SmartTube) with auto-generated cards.
+- **🔌 Hardware TV Input Switcher:**
+  - Integrates with Android `TvInputManager` to discover **HDMI 1**, **HDMI 2**, **HDMI 3**, **Composite**, and **Live TV**.
+  - Switch TV inputs with 1 remote click, or pin HDMI inputs directly to your Favorites grid!
+- **👁️ Hide App System:**
+  - Hide unwanted system or bloatware apps from your Applications grid via the Hold-OK menu.
+  - Manage and unhide apps anytime from the Settings menu.
+- **🌙 Screen Off (Audio Mode):**
+  - Instant screen-off mode with `0.001f` screen brightness for listening to music on **Spotify** or **YouTube Music** on OLED TVs without panel wear.
+  - Press any button on the TV remote to instantly wake the screen back up.
 - **🎛️ Interactive Remote Management (D-Pad Optimized):**
   - **Hold OK (Long Press)** on any app card to open the minimal action sheet:
     - `Move`: Enter rearrange mode.
     - `Favorite / Unfavorite`: Pin to Favorites or demote to Applications.
+    - `Hide`: Hide app from view.
     - `Detail`: Open Android App Info settings.
     - `Uninstall`: Prompt system uninstall dialog.
   - **Live Rearrange (Move Mode):**
     - Seamless live card swapping using D-Pad Left/Right.
     - Order is immediately persisted into `SharedPreferences`.
     - Zero flickering: Focus is locked onto the moving card.
-- **📂 Clean Layout Structure:**
-  - **Favorites** placed in the focal center of the screen.
-  - **All Applications** collapsed by default (`All Applications ▼`), expandable with a single remote click.
 
 ---
 
 ## 📸 Screenshots
 
-| Minimal Home Screen | Focus State & Settings |
+| Minimal Home Screen | 🖤 OLED Pure Black Mode |
 | :---: | :---: |
-| ![Home](docs/images/home_screen.png) | ![Settings Focus](docs/images/settings_focus.png) |
+| ![Home](docs/images/home_screen.png) | ![OLED Mode](docs/images/oled_black_mode.png) |
 
-| Hold OK Management Dialog | Live Rearrange / Move Mode |
+| NuttyFlix Settings Dialog | HDMI Inputs & All Applications |
+| :---: | :---: |
+| ![Settings Dialog](docs/images/launcher_settings_dialog.png) | ![HDMI Inputs](docs/images/hdmi_inputs_expanded.png) |
+
+| Hold OK Management Sheet | Live Rearrange / Move Mode |
 | :---: | :---: |
 | ![Dialog](docs/images/app_dialog.png) | ![Rearrange](docs/images/rearrange_mode.png) |
 
@@ -52,11 +67,11 @@
 | Button | Action |
 | :--- | :--- |
 | **D-Pad Up / Down / Left / Right** | Navigate through app banners smoothly |
-| **OK (Short Press)** | Launch selected app |
-| **OK (Long Press / Hold)** | Open App Management Dialog (`Move`, `Unfavorite`, `Detail`, `Uninstall`) |
+| **OK (Short Press)** | Launch selected app or switch to selected HDMI input |
+| **OK (Long Press / Hold)** | Open App Management Dialog (`Move`, `Favorite/Unfavorite`, `Hide`, `Detail`, `Uninstall`) |
 | **In Move Mode: Left / Right** | Swap card position with neighbor in real-time |
 | **In Move Mode: OK / Back** | Confirm and save new app order |
-| **Settings Gear (Top Right)** | Opens TV System Settings instantly |
+| **Settings Gear (Top Right)** | Opens NuttyFlix Settings Menu (OLED Black, Screen Off Audio Mode, Hidden Apps, System Settings) |
 
 ---
 

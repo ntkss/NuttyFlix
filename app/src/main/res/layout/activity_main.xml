@@ -7,6 +7,7 @@
 
     <!-- Starry Night Mountain Wallpaper -->
     <ImageView
+        android:id="@+id/img_wallpaper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
@@ -14,6 +15,7 @@
 
     <!-- Dark gradient overlay for text legibility -->
     <View
+        android:id="@+id/view_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_overlay_dark" />
@@ -30,6 +32,15 @@
         android:elevation="10dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/iv_network_status"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="16dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_wifi_connected"
+            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/btn_settings"

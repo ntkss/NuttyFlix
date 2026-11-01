@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_top">#14112E</color>
+    <color name="bg_bottom">#09090C</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#9CA3AF</color>
+    <color name="text_muted">#6B7280</color>
+    <color name="card_glass_bg">#20FFFFFF</color>
+    <color name="card_glass_border">#30FFFFFF</color>
+    <color name="card_focused_bg">#4D6366F1</color>
+    <color name="card_focused_border">#FFFFFFFF</color>
+    <color name="accent_glow">#818CF8</color>
+</resources>

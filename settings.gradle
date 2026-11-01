@@ -1,0 +1,2 @@
+rootProject.name = "NuttyLauncher"
+include ':app'

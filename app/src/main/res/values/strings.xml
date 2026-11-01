@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Nutty Launcher</string>
+    <string name="quick_settings">ตั้งค่าทีวี</string>
+    <string name="quick_inputs">สลับ HDMI / ช่องทีวี</string>
+    <string name="section_favorites">แอปความบันเทิงของคุณ</string>
+</resources>

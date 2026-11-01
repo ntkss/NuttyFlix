@@ -1,5 +1,11 @@
 # NuttyFlix Launcher (Android TV) 🚀
 
+<div align="center">
+  <img src="docs/images/ic_app_icon.png" width="120" height="120" alt="NuttyFlix Icon" />
+  <br/>
+  <img src="app/src/main/res/drawable-nodpi/logo_nuttyflix.png" width="260" alt="NuttyFlix Logo" />
+</div>
+
 > **Ultra-Lightweight, Zero-Ad, Minimalist Custom Launcher for Android TV 11+**
 > Tailored specifically for High-Performance OLED / 4K Android TVs (Tested on Panasonic 4K Android TV).
 
@@ -10,12 +16,13 @@
 ## ✨ Features
 
 - **⚡ Blazing Fast Performance:**
-  - APK size ~ 527 KB (vs OEM launcher > 80 MB).
+  - APK size ~ 780 KB (vs OEM launcher > 80 MB).
   - Cold launch time < 150 ms with zero background lag or stutter.
   - Zero third-party dependencies: Pure native Android SDK (Java + Vector Drawables).
 - **🛡️ 100% Ad-Free & Telemetry-Free:**
   - No sponsored feeds, no banners, no background tracking, no network pinging.
-- **🎨 FLauncher Minimalist Aesthetic & OLED Black Mode:**
+- **🎨 FLauncher & Netflix-Style Minimalist Aesthetic:**
+  - Iconic curved red **NuttyFlix** wordmark on the top-left and 3D glowing ribbon squircle app icon.
   - Modern 16:9 banner app cards with smooth focus animations (1.08x scale + shadow elevation).
   - Night starry sky wallpaper with dark readable contrast gradient overlay.
   - **🖤 OLED Pure Black Mode:** One-click toggle in settings for pitch black (`#000000`) background (infinite contrast, 0 pixel power, burn-in protection).

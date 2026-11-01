@@ -25,6 +25,8 @@ import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -48,13 +50,17 @@ public class MainActivity extends Activity {
     private GridLayout gridApplications;
     private TextView btnToggleApplications;
     private ImageView btnSettings;
-    private ImageView ivNetworkStatus;
+    private ImageView btnInput;
+    private ImageView btnNetwork;
+    private LinearLayout trayInputs;
+    private LinearLayout trayNetwork;
     private LayoutInflater inflater;
     private ViewOutlineProvider cardOutlineProvider;
     private SharedPreferences prefs;
 
     private final List<AppInfo> favoriteApps = new ArrayList<>();
     private final List<AppInfo> otherApps = new ArrayList<>();
+    private final List<TvInputModel> tvInputs = new ArrayList<>();
 
     // Rearrange mode state
     private boolean isRearranging = false;
@@ -81,6 +87,18 @@ public class MainActivity extends Activity {
         "com.ais.mimo.aisplay.tv"
     };
 
+    public static class TvInputModel {
+        public final String id;
+        public final String label;
+        public final boolean isTuner;
+
+        public TvInputModel(String id, String label, boolean isTuner) {
+            this.id = id;
+            this.label = label;
+            this.isTuner = isTuner;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,7 +114,10 @@ public class MainActivity extends Activity {
         gridApplications = findViewById(R.id.grid_applications);
         btnToggleApplications = findViewById(R.id.btn_toggle_applications);
         btnSettings = findViewById(R.id.btn_settings);
-        ivNetworkStatus = findViewById(R.id.iv_network_status);
+        btnInput = findViewById(R.id.btn_input);
+        btnNetwork = findViewById(R.id.btn_network);
+        trayInputs = findViewById(R.id.tray_inputs);
+        trayNetwork = findViewById(R.id.tray_network);
 
         final int radiusPx = (int) (10 * getResources().getDisplayMetrics().density);
         cardOutlineProvider = new ViewOutlineProvider() {
@@ -107,8 +128,9 @@ public class MainActivity extends Activity {
         };
 
         applyOledMode(isOledModeEnabled());
-        setupSettingsButton();
+        setupTopBarButtons();
         setupToggleApplicationsButton();
+        queryTvInputs();
         updateNetworkStatus();
         loadApps();
     }
@@ -139,47 +161,334 @@ public class MainActivity extends Activity {
     }
 
     private void updateNetworkStatus() {
-        if (ivNetworkStatus == null) return;
+        if (btnNetwork == null) return;
         try {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             if (cm != null) {
                 NetworkCapabilities caps = cm.getNetworkCapabilities(cm.getActiveNetwork());
                 if (caps != null) {
                     if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-                        ivNetworkStatus.setImageResource(R.drawable.ic_ethernet_connected);
-                        ivNetworkStatus.setVisibility(View.VISIBLE);
+                        btnNetwork.setImageResource(R.drawable.ic_ethernet_connected);
                         return;
                     } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                        ivNetworkStatus.setImageResource(R.drawable.ic_wifi_connected);
-                        ivNetworkStatus.setVisibility(View.VISIBLE);
+                        btnNetwork.setImageResource(R.drawable.ic_wifi_connected);
                         return;
                     }
                 }
             }
         } catch (Exception ignored) {}
-        ivNetworkStatus.setVisibility(View.GONE);
+        btnNetwork.setImageResource(R.drawable.ic_wifi_connected);
     }
 
-    private void setupSettingsButton() {
-        btnSettings.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+    private void setupTopBarButtons() {
+        setupCircularButton(btnSettings, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                foldAllTrays();
+                showLauncherSettingsDialog();
+            }
+        });
+
+        setupCircularButton(btnInput, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleInputsTray();
+            }
+        });
+
+        setupCircularButton(btnNetwork, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleNetworkTray();
+            }
+        });
+    }
+
+    private void setupCircularButton(final ImageView btn, final View.OnClickListener clickListener) {
+        btn.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (hasFocus) {
-                    btnSettings.setColorFilter(Color.parseColor("#0F172A"));
+                    btn.setColorFilter(Color.parseColor("#0F172A"));
                     v.animate().scaleX(1.15f).scaleY(1.15f).setDuration(120).start();
                 } else {
-                    btnSettings.setColorFilter(Color.WHITE);
+                    btn.setColorFilter(Color.WHITE);
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+                }
+            }
+        });
+        btn.setOnClickListener(clickListener);
+    }
+
+    private void queryTvInputs() {
+        tvInputs.clear();
+        Set<String> seenLabels = new HashSet<>();
+        try {
+            TvInputManager tvInputManager = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
+            if (tvInputManager != null) {
+                List<TvInputInfo> inputs = tvInputManager.getTvInputList();
+                if (inputs != null) {
+                    for (TvInputInfo input : inputs) {
+                        String id = input.getId();
+                        if (input.isPassthroughInput()) {
+                            String label = "HDMI";
+                            CharSequence cs = input.loadLabel(this);
+                            if (cs != null && !cs.toString().trim().isEmpty()) {
+                                label = cs.toString().trim();
+                            } else if (id.contains("HW4") || id.contains("1")) {
+                                label = "HDMI 1";
+                            } else if (id.contains("HW5") || id.contains("2")) {
+                                label = "HDMI 2";
+                            } else if (id.contains("HW6") || id.contains("3")) {
+                                label = "HDMI 3";
+                            } else if (id.contains("composite") || id.contains("Composite")) {
+                                label = "AV";
+                            }
+                            if (!seenLabels.contains(label)) {
+                                seenLabels.add(label);
+                                tvInputs.add(new TvInputModel(id, label, false));
+                            }
+                        } else if (id.contains("tuner") || id.contains("Tuner")) {
+                            if (!seenLabels.contains("Live TV")) {
+                                seenLabels.add("Live TV");
+                                tvInputs.add(new TvInputModel(id, "Live TV", true));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback default inputs if none reported by system
+        if (tvInputs.isEmpty()) {
+            tvInputs.add(new TvInputModel("live_tv", "Live TV", true));
+            tvInputs.add(new TvInputModel("hdmi_1", "HDMI 1", false));
+            tvInputs.add(new TvInputModel("hdmi_2", "HDMI 2", false));
+            tvInputs.add(new TvInputModel("hdmi_3", "HDMI 3", false));
+        } else {
+            // Sort inputs: Live TV, HDMI 1, HDMI 2, HDMI 3, AV
+            Collections.sort(tvInputs, new Comparator<TvInputModel>() {
+                @Override
+                public int compare(TvInputModel a, TvInputModel b) {
+                    if (a.isTuner) return -1;
+                    if (b.isTuner) return 1;
+                    return a.label.compareToIgnoreCase(b.label);
+                }
+            });
+        }
+    }
+
+    private void toggleInputsTray() {
+        if (trayInputs.getVisibility() == View.VISIBLE) {
+            foldTray(trayInputs, btnInput);
+        } else {
+            if (trayNetwork.getVisibility() == View.VISIBLE) {
+                foldTray(trayNetwork, null);
+            }
+            populateInputsTray();
+            unfoldTray(trayInputs);
+        }
+    }
+
+    private void populateInputsTray() {
+        trayInputs.removeAllViews();
+        for (final TvInputModel input : tvInputs) {
+            String iconPrefix = input.isTuner ? "📺 " : "🔌 ";
+            TextView pill = createPillButton(iconPrefix + input.label, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    launchTvInput(input);
+                    foldTray(trayInputs, btnInput);
+                }
+            });
+            trayInputs.addView(pill);
+        }
+    }
+
+    private void launchTvInput(TvInputModel input) {
+        try {
+            if (input.isTuner) {
+                Intent tvCenter = getPackageManager().getLaunchIntentForPackage("com.mediatek.wwtv.tvcenter");
+                if (tvCenter != null) {
+                    tvCenter.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(tvCenter);
+                    return;
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW, TvContract.Channels.CONTENT_URI);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } else {
+                Uri uri = TvContract.buildChannelUriForPassthroughInput(input.id);
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Switching to " + input.label, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void toggleNetworkTray() {
+        if (trayNetwork.getVisibility() == View.VISIBLE) {
+            foldTray(trayNetwork, btnNetwork);
+        } else {
+            if (trayInputs.getVisibility() == View.VISIBLE) {
+                foldTray(trayInputs, null);
+            }
+            populateNetworkTray();
+            unfoldTray(trayNetwork);
+        }
+    }
+
+    private void populateNetworkTray() {
+        trayNetwork.removeAllViews();
+
+        TextView btnWifi = createPillButton("📶  Wi-Fi", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                foldTray(trayNetwork, btnNetwork);
+                try {
+                    Intent intent = new Intent("android.settings.WIFI_SETTINGS");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    try {
+                        Intent fallback = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
+                        fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(fallback);
+                    } catch (Exception ex) {
+                        Toast.makeText(MainActivity.this, "Cannot open Wi-Fi settings", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        });
+
+        TextView btnEth = createPillButton("🔌  Ethernet", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                foldTray(trayNetwork, btnNetwork);
+                try {
+                    ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    NetworkCapabilities caps = (cm != null) ? cm.getNetworkCapabilities(cm.getActiveNetwork()) : null;
+                    boolean isEth = caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET);
+                    if (isEth) {
+                        Toast.makeText(MainActivity.this, "Ethernet Connected (High-Speed LAN)", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Ethernet Cable Disconnected", Toast.LENGTH_SHORT).show();
+                    }
+                    Intent intent = new Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception ignored) {}
+            }
+        });
+
+        TextView btnAllNet = createPillButton("⚙  Network Settings", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                foldTray(trayNetwork, btnNetwork);
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Opening Network Settings", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        trayNetwork.addView(btnWifi);
+        trayNetwork.addView(btnEth);
+        trayNetwork.addView(btnAllNet);
+    }
+
+    private TextView createPillButton(String text, View.OnClickListener onClick) {
+        TextView btn = new TextView(this);
+        btn.setText(text);
+        btn.setTextColor(getResources().getColorStateList(R.color.btn_dialog_text_color));
+        btn.setTextSize(12);
+        btn.setTypeface(null, android.graphics.Typeface.BOLD);
+        btn.setGravity(android.view.Gravity.CENTER);
+        btn.setBackgroundResource(R.drawable.btn_dialog_selector);
+        btn.setFocusable(true);
+        btn.setClickable(true);
+
+        float density = getResources().getDisplayMetrics().density;
+        int padH = (int) (12 * density);
+        btn.setPadding(padH, 0, padH, 0);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            (int) (30 * density)
+        );
+        lp.setMarginEnd((int) (6 * density));
+        btn.setLayoutParams(lp);
+
+        btn.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    v.animate().scaleX(1.08f).scaleY(1.08f).setDuration(120).start();
+                } else {
                     v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
                 }
             }
         });
 
-        btnSettings.setOnClickListener(new View.OnClickListener() {
+        btn.setOnClickListener(onClick);
+        return btn;
+    }
+
+    private void unfoldTray(final LinearLayout tray) {
+        tray.setVisibility(View.VISIBLE);
+        tray.setAlpha(0f);
+        tray.setScaleX(0.3f);
+        tray.setTranslationX(40f);
+        tray.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .translationX(0f)
+            .setDuration(220)
+            .setInterpolator(new DecelerateInterpolator())
+            .start();
+
+        tray.post(new Runnable() {
             @Override
-            public void onClick(View v) {
-                showLauncherSettingsDialog();
+            public void run() {
+                if (tray.getChildCount() > 0) {
+                    tray.getChildAt(0).requestFocus();
+                }
             }
         });
+    }
+
+    private void foldTray(final LinearLayout tray, final View returnFocusView) {
+        if (tray.getVisibility() != View.VISIBLE) return;
+        tray.animate()
+            .alpha(0f)
+            .scaleX(0.3f)
+            .translationX(40f)
+            .setDuration(160)
+            .setInterpolator(new AccelerateInterpolator())
+            .withEndAction(new Runnable() {
+                @Override
+                public void run() {
+                    tray.setVisibility(View.GONE);
+                    if (returnFocusView != null) {
+                        returnFocusView.requestFocus();
+                    }
+                }
+            })
+            .start();
+    }
+
+    private void foldAllTrays() {
+        if (trayInputs.getVisibility() == View.VISIBLE) {
+            foldTray(trayInputs, null);
+        }
+        if (trayNetwork.getVisibility() == View.VISIBLE) {
+            foldTray(trayNetwork, null);
+        }
     }
 
     private void setupToggleApplicationsButton() {
@@ -271,6 +580,9 @@ public class MainActivity extends Activity {
             addedPackages.add(pkg);
 
             String label = info.loadLabel(pm).toString();
+            if (pkg.equals("com.mediatek.wwtv.tvcenter") || label.equalsIgnoreCase("Live TV")) {
+                continue;
+            }
             Drawable icon = info.loadIcon(pm);
             Drawable banner = null;
             try {
@@ -283,41 +595,6 @@ public class MainActivity extends Activity {
             String className = info.activityInfo.name;
             allDiscovered.add(new AppInfo(label, pkg, className, icon, banner));
         }
-
-        // 3. Hardware TV Inputs (HDMI 1, HDMI 2, Live TV)
-        try {
-            TvInputManager tvInputManager = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
-            if (tvInputManager != null) {
-                List<TvInputInfo> inputs = tvInputManager.getTvInputList();
-                if (inputs != null) {
-                    Drawable hdmiIcon = getDrawable(R.drawable.ic_hdmi_banner);
-                    for (TvInputInfo input : inputs) {
-                        if (input.isPassthroughInput()) {
-                            String inputId = input.getId();
-                            String pkgKey = "input:" + inputId;
-                            if (addedPackages.contains(pkgKey) || hiddenSet.contains(pkgKey)) {
-                                continue;
-                            }
-                            addedPackages.add(pkgKey);
-
-                            String label = "HDMI";
-                            CharSequence cs = input.loadLabel(this);
-                            if (cs != null && !cs.toString().trim().isEmpty()) {
-                                label = cs.toString().trim();
-                            } else if (inputId.contains("HW4") || inputId.contains("1")) {
-                                label = "HDMI 1";
-                            } else if (inputId.contains("HW5") || inputId.contains("2")) {
-                                label = "HDMI 2";
-                            } else if (inputId.contains("HW6") || inputId.contains("3")) {
-                                label = "HDMI 3";
-                            }
-
-                            allDiscovered.add(new AppInfo(label, pkgKey, inputId, hdmiIcon, null, true, inputId));
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
 
         List<String> favOrder = getSavedFavoriteOrder();
         Set<String> favSet = new HashSet<>(favOrder);
@@ -493,18 +770,6 @@ public class MainActivity extends Activity {
     }
 
     private void launchApp(AppInfo app) {
-        if (app.isTvInput()) {
-            try {
-                Uri uri = TvContract.buildChannelUriForPassthroughInput(app.getInputId());
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
-            } catch (Exception e) {
-                Toast.makeText(MainActivity.this, "Cannot switch to " + app.getLabel(), Toast.LENGTH_SHORT).show();
-            }
-            return;
-        }
-
         try {
             Intent launchIntent = new Intent(Intent.ACTION_MAIN);
             launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -578,45 +843,40 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (app.isTvInput()) {
-            btnInfo.setVisibility(View.GONE);
-            btnUninstall.setVisibility(View.GONE);
-        } else {
-            btnInfo.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
-                    try {
-                        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        intent.setData(Uri.parse("package:" + app.getPackageName()));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "Cannot open details", Toast.LENGTH_SHORT).show();
-                    }
+        btnInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                try {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(Uri.parse("package:" + app.getPackageName()));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Cannot open details", Toast.LENGTH_SHORT).show();
                 }
-            });
+            }
+        });
 
-            btnUninstall.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
+        btnUninstall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                try {
+                    Intent uninstallIntent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
+                    uninstallIntent.setData(Uri.parse("package:" + app.getPackageName()));
+                    uninstallIntent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
+                    startActivity(uninstallIntent);
+                } catch (Exception e) {
                     try {
-                        Intent uninstallIntent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
-                        uninstallIntent.setData(Uri.parse("package:" + app.getPackageName()));
-                        uninstallIntent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
-                        startActivity(uninstallIntent);
-                    } catch (Exception e) {
-                        try {
-                            Intent delIntent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + app.getPackageName()));
-                            startActivity(delIntent);
-                        } catch (Exception ex) {
-                            Toast.makeText(MainActivity.this, "Cannot uninstall system app", Toast.LENGTH_SHORT).show();
-                        }
+                        Intent delIntent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + app.getPackageName()));
+                        startActivity(delIntent);
+                    } catch (Exception ex) {
+                        Toast.makeText(MainActivity.this, "Cannot uninstall system app", Toast.LENGTH_SHORT).show();
                     }
                 }
-            });
-        }
+            }
+        });
 
         dialog.show();
         btnMove.requestFocus();
@@ -718,11 +978,7 @@ public class MainActivity extends Activity {
         for (final String pkg : hiddenSet) {
             String label = pkg;
             try {
-                if (pkg.startsWith("input:")) {
-                    label = "Input: " + pkg.substring(6);
-                } else {
-                    label = pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString();
-                }
+                label = pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString();
             } catch (Exception ignored) {}
 
             TextView btnApp = new TextView(this);
@@ -775,7 +1031,6 @@ public class MainActivity extends Activity {
         txt.setGravity(android.view.Gravity.CENTER);
         screenOffDialog.setContentView(txt);
 
-        // Auto fade out hint text after 3 seconds
         txt.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -802,7 +1057,10 @@ public class MainActivity extends Activity {
         rearrangingApp = app;
         isRearrangingFavorites = isFav;
 
+        foldAllTrays();
         btnSettings.setFocusable(false);
+        btnInput.setFocusable(false);
+        btnNetwork.setFocusable(false);
         btnToggleApplications.setFocusable(false);
 
         renderGrids();
@@ -815,6 +1073,8 @@ public class MainActivity extends Activity {
         rearrangingApp = null;
 
         btnSettings.setFocusable(true);
+        btnInput.setFocusable(true);
+        btnNetwork.setFocusable(true);
         btnToggleApplications.setFocusable(true);
 
         saveFavoriteOrder();
@@ -873,6 +1133,14 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (trayInputs.getVisibility() == View.VISIBLE) {
+            foldTray(trayInputs, btnInput);
+            return;
+        }
+        if (trayNetwork.getVisibility() == View.VISIBLE) {
+            foldTray(trayNetwork, btnNetwork);
+            return;
+        }
         if (isRearranging) {
             finishRearrange();
             return;

@@ -19,13 +19,14 @@
   - Modern 16:9 banner app cards with smooth focus animations (1.08x scale + shadow elevation).
   - Night starry sky wallpaper with dark readable contrast gradient overlay.
   - **🖤 OLED Pure Black Mode:** One-click toggle in settings for pitch black (`#000000`) background (infinite contrast, 0 pixel power, burn-in protection).
-  - Top bar featuring real-time **Network Status** (Ethernet `<|>` / Wi-Fi), **Settings Gear**, **Live Clock** (`HH:mm`), and **Date** (`d MMM yyyy`).
-- **📱 Sideload & Mobile App Support:**
-  - Automatically queries both `CATEGORY_LEANBACK_LAUNCHER` and `CATEGORY_LAUNCHER`.
-  - Seamlessly launches sideloaded mobile APKs (Chrome, Brave, Kodi, SmartTube) with auto-generated cards.
-- **🔌 Hardware TV Input Switcher:**
-  - Integrates with Android `TvInputManager` to discover **HDMI 1**, **HDMI 2**, **HDMI 3**, **Composite**, and **Live TV**.
-  - Switch TV inputs with 1 remote click, or pin HDMI inputs directly to your Favorites grid!
+  - Top bar featuring real-time **Network Button**, **Input Source Button**, **Settings Gear**, **Live Clock** (`HH:mm`), and **Date** (`d MMM yyyy`).
+- **🔌 Animated Unfolding TV Input Switcher:**
+  - Dedicated **Input Source Button `[ -> ]`** in the top bar right beside Settings.
+  - Clicking it **smoothly unfurls an animated inline ribbon tray** (`Live TV`, `Composite`, `HDMI 1`, `HDMI 2`, `HDMI 3`) with zero disruptive popup dialogs.
+  - Pressing Back or navigating away smoothly folds the tray back into the button.
+- **📶 Interactive & Expandable Network Tray:**
+  - The top bar **Network Button** displays real-time connection status (`<|>` Ethernet / Wi-Fi) and is fully interactive.
+  - Clicking it **unfurls an animated inline network drawer** (`Wi-Fi`, `Ethernet`, `Network Settings`), allowing seamless switching and Wi-Fi SSID selection directly from Android TV's native side overlay.
 - **👁️ Hide App System:**
   - Hide unwanted system or bloatware apps from your Applications grid via the Hold-OK menu.
   - Manage and unhide apps anytime from the Settings menu.
